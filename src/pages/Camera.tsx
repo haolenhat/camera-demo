@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faDownload, faFaceSmile } from '@fortawesome/free-solid-svg-icons';
 import switchCameraIcon from '../assets/camera.png';
 import captureSound from '../assets/sound.mp3';
 
@@ -112,8 +112,12 @@ const Camera: React.FC = () => {
           </>
         ) : (
           <>
-            <div className="w-1/3 flex justify-start"></div>
+            <div className="w-1/3 flex justify-start">
+              <FontAwesomeIcon icon={faFaceSmile} className="text-white text-2xl" />
+
+            </div>
             <div className="w-1/3 flex justify-center">
+
               <div
                 className="bg-white rounded-full p-4 cursor-pointer"
                 onClick={handleCapture}
