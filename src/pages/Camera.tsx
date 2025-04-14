@@ -15,12 +15,20 @@ const Camera: React.FC = () => {
   const startCamera = async (mode: "environment" | "user" = "environment") => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode },
+        video: {
+          facingMode: mode,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
         audio: false,
       });
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play();
+        };
       }
     } catch (err) {
       console.error("Camera error:", err);
@@ -41,13 +49,12 @@ const Camera: React.FC = () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/png");
+        const dataUrl = canvas.toDataURL("image/jpeg", 1.0); // JPEG high quality
         setCapturedImage(dataUrl);
         setIsCaptured(true);
 
-        // Phát âm thanh khi chụp ảnh
-        const audio = new Audio(captureSound); // Tạo đối tượng Audio từ file âm thanh
-        audio.play(); // Phát âm thanh
+        const audio = new Audio(captureSound);
+        audio.play();
       }
     }
   };
@@ -62,7 +69,7 @@ const Camera: React.FC = () => {
     if (capturedImage) {
       const link = document.createElement('a');
       link.href = capturedImage;
-      link.download = 'captured_image.png';
+      link.download = 'captured_image.jpg';
       link.click();
     }
   };
@@ -73,19 +80,19 @@ const Camera: React.FC = () => {
 
   return (
     <div className="bg-gray-800 flex items-center justify-center h-screen relative flex-col">
-      <div className="flex-1 w-full h-full relative">
+      <div className="flex-1 w-full h-full relative aspect-video bg-black">
         {error ? (
           <div className="text-white text-center p-4">{error}</div>
         ) : isCaptured ? (
           <img
             src={capturedImage || undefined}
             alt="Captured"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         ) : (
           <video
             ref={videoRef}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             autoPlay
             playsInline
             muted
@@ -96,7 +103,7 @@ const Camera: React.FC = () => {
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
       {/* Bottom Bar */}
-      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-4 ">
+      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-4">
         {isCaptured ? (
           <>
             <FontAwesomeIcon
@@ -114,10 +121,8 @@ const Camera: React.FC = () => {
           <>
             <div className="w-1/3 flex justify-start">
               <FontAwesomeIcon icon={faFaceSmile} className="text-white text-2xl" />
-
             </div>
             <div className="w-1/3 flex justify-center">
-
               <div
                 className="bg-white rounded-full p-4 cursor-pointer"
                 onClick={handleCapture}
