@@ -107,16 +107,25 @@ const Camera: React.FC = () => {
   };
 
   const handleCancel = () => {
+    // Reset ảnh, trạng thái
     setCapturedImage(null);
     setIsCaptured(false);
     setSelectedFilter(null);
     setShowFilterBox(false);
     setError(null);
+
+    // Dừng camera hiện tại
+    stopCamera();
+
+    // Chuyển sang camera trước
     setFacingMode("user");
+
+    // Sau 100ms, chuyển lại camera sau (giống như reset nhẹ)
     setTimeout(() => {
       setFacingMode("environment");
     }, 100);
   };
+
 
 
   const handleDownload = () => {
