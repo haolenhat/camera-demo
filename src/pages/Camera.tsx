@@ -113,9 +113,11 @@ const Camera: React.FC = () => {
     setSelectedFilter(null);
     setShowFilterBox(false);
     setError(null);
-    setFacingMode("environment");
-    startCamera("environment");
+
+    // GỌI LẠI camera sau khi hủy ảnh
+    startCamera(facingMode);
   };
+
 
   const handleDownload = () => {
     if (capturedImage) {
