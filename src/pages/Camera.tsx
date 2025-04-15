@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faDownload, faFaceSmile } from '@fortawesome/free-solid-svg-icons';
 import switchCameraIcon from '../assets/camera.png';
 import captureSound from '../assets/sound.mp3';
+import filter1 from '../assets/filter1.png';
+import filter2 from '../assets/filter2.png';
 
 const Camera: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -11,17 +13,13 @@ const Camera: React.FC = () => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [isCaptured, setIsCaptured] = useState<boolean>(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
-
-  const isPortrait = window.innerHeight > window.innerWidth;
+  const [showFilterBox, setShowFilterBox] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
   const startCamera = async (mode: "environment" | "user" = "environment") => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: mode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
+        video: { facingMode: mode },
         audio: false,
       });
 
@@ -44,15 +42,67 @@ const Camera: React.FC = () => {
     if (video && canvas) {
       const context = canvas.getContext("2d");
       if (context) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/png");
-        setCapturedImage(dataUrl);
-        setIsCaptured(true);
+        // Lấy kích thước hiển thị của video
+        const displayWidth = video.clientWidth;
+        const displayHeight = video.clientHeight;
 
-        const audio = new Audio(captureSound);
-        audio.play();
+        // Đặt kích thước canvas bằng kích thước hiển thị
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+
+        // Tính tỷ lệ của video gốc và hiển thị
+        const videoRatio = video.videoWidth / video.videoHeight;
+        const displayRatio = displayWidth / displayHeight;
+
+        let drawWidth, drawHeight, xOffset, yOffset;
+
+        // Áp dụng logic tương tự object-cover
+        if (videoRatio > displayRatio) {
+          drawHeight = displayHeight;
+          drawWidth = drawHeight * videoRatio;
+          xOffset = (displayWidth - drawWidth) / 2;
+          yOffset = 0;
+        } else {
+          drawWidth = displayWidth;
+          drawHeight = drawWidth / videoRatio;
+          xOffset = 0;
+          yOffset = (displayHeight - drawHeight) / 2;
+        }
+
+        // Vẽ video lên canvas
+        context.drawImage(video, xOffset, yOffset, drawWidth, drawHeight);
+
+        if (selectedFilter) {
+          const filterImg = new Image();
+          filterImg.src = selectedFilter;
+
+          filterImg.onload = () => {
+            // Xác định filterRatio dựa trên thiết bị
+            const isMobile = window.innerWidth <= 768; // Mobile nếu chiều rộng <= 768px
+            const filterRatio = isMobile ? 0.7 : 0.4; // 70% trên mobile, 40% trên PC
+
+            // Tính kích thước filter dựa trên kích thước canvas
+            const filterWidth = canvas.width * filterRatio;
+            const filterHeight = canvas.width * filterRatio; // Giữ tỷ lệ vuông
+            const x = (canvas.width - filterWidth) / 2;
+            const y = (canvas.height - filterHeight) / 2;
+
+            // Vẽ filter lên canvas
+            context.drawImage(filterImg, x, y, filterWidth, filterHeight);
+
+            // Xuất ảnh
+            const dataUrl = canvas.toDataURL("image/png");
+            setCapturedImage(dataUrl);
+            setIsCaptured(true);
+            new Audio(captureSound).play();
+          };
+        } else {
+          // Xuất ảnh nếu không có filter
+          const dataUrl = canvas.toDataURL("image/png");
+          setCapturedImage(dataUrl);
+          setIsCaptured(true);
+          new Audio(captureSound).play();
+        }
       }
     }
   };
@@ -77,7 +127,7 @@ const Camera: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-800 flex items-center justify-center w-screen h-screen relative flex-col overflow-hidden">
+    <div className="bg-gray-800 flex items-center justify-center h-screen relative flex-col">
       <div className="flex-1 w-full h-full relative">
         {error ? (
           <div className="text-white text-center p-4">{error}</div>
@@ -88,20 +138,45 @@ const Camera: React.FC = () => {
             className="w-full h-full object-cover"
           />
         ) : (
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            autoPlay
-            playsInline
-            muted
-          />
+          <>
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
+            {selectedFilter && (
+              <img
+                src={selectedFilter}
+                alt="Filter"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[70%] md:w-[40%] h-auto object-contain pointer-events-none z-10"
+              />
+            )}
+          </>
         )}
       </div>
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
-      {/* Bottom Bar */}
-      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-4  bg-opacity-50">
+      {showFilterBox && !isCaptured && (
+        <div className="absolute bottom-20 left-4 bg-white rounded-lg p-2 flex gap-2 z-50">
+          {[filter1, filter2].map((filter, idx) => (
+            <img
+              key={idx}
+              src={filter}
+              alt={`filter-${idx}`}
+              className="w-16 h-16 rounded cursor-pointer border-2 border-transparent hover:border-blue-500"
+              onClick={() => {
+                setSelectedFilter(filter);
+                setShowFilterBox(false);
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-4">
         {isCaptured ? (
           <>
             <FontAwesomeIcon
@@ -117,8 +192,12 @@ const Camera: React.FC = () => {
           </>
         ) : (
           <>
-            <div className="w-1/3 flex justify-start">
-              <FontAwesomeIcon icon={faFaceSmile} className="text-white text-2xl" />
+            <div className="w-1/3 flex justify-start relative">
+              <FontAwesomeIcon
+                icon={faFaceSmile}
+                className="text-white text-2xl cursor-pointer"
+                onClick={() => setShowFilterBox(prev => !prev)}
+              />
             </div>
             <div className="w-1/3 flex justify-center">
               <div
