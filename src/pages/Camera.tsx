@@ -18,10 +18,16 @@ const Camera: React.FC = () => {
 
   const startCamera = async (mode: "environment" | "user" = "environment") => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode },
+      const constraints = {
+        video: {
+          facingMode: mode,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
         audio: false,
-      });
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -31,6 +37,7 @@ const Camera: React.FC = () => {
       setError("Không thể truy cập camera. Vui lòng cho phép trình duyệt.");
     }
   };
+
 
   const stopCamera = () => {
     const video = videoRef.current;
