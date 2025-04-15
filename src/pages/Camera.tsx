@@ -12,23 +12,21 @@ const Camera: React.FC = () => {
   const [isCaptured, setIsCaptured] = useState<boolean>(false);
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
 
+  const isPortrait = window.innerHeight > window.innerWidth;
+
   const startCamera = async (mode: "environment" | "user" = "environment") => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: mode,
           width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          height: { ideal: 1080 },
         },
         audio: false,
       });
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-        };
       }
     } catch (err) {
       console.error("Camera error:", err);
@@ -49,7 +47,7 @@ const Camera: React.FC = () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 1.0); // JPEG high quality
+        const dataUrl = canvas.toDataURL("image/png");
         setCapturedImage(dataUrl);
         setIsCaptured(true);
 
@@ -69,7 +67,7 @@ const Camera: React.FC = () => {
     if (capturedImage) {
       const link = document.createElement('a');
       link.href = capturedImage;
-      link.download = 'captured_image.jpg';
+      link.download = 'captured_image.png';
       link.click();
     }
   };
@@ -79,20 +77,20 @@ const Camera: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-800 flex items-center justify-center h-screen relative flex-col">
-      <div className="flex-1 w-full h-full relative aspect-video bg-black">
+    <div className="bg-gray-800 flex items-center justify-center w-screen h-screen relative flex-col overflow-hidden">
+      <div className="flex-1 w-full h-full relative">
         {error ? (
           <div className="text-white text-center p-4">{error}</div>
         ) : isCaptured ? (
           <img
             src={capturedImage || undefined}
             alt="Captured"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
         ) : (
           <video
             ref={videoRef}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
             autoPlay
             playsInline
             muted
@@ -103,7 +101,7 @@ const Camera: React.FC = () => {
       <canvas ref={canvasRef} style={{ display: "none" }} />
 
       {/* Bottom Bar */}
-      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-4">
+      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between p-4  bg-opacity-50">
         {isCaptured ? (
           <>
             <FontAwesomeIcon
