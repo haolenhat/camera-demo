@@ -79,7 +79,7 @@ const Camera: React.FC = () => {
           filterImg.onload = () => {
             // Xác định filterRatio dựa trên thiết bị
             const isMobile = window.innerWidth <= 768; // Mobile nếu chiều rộng <= 768px
-            const filterRatio = isMobile ? 0.7 : 0.4; // 70% trên mobile, 40% trên PC
+            const filterRatio = isMobile ? 0.8 : 0.4; // 80% trên mobile, 40% trên PC
 
             // Tính kích thước filter dựa trên kích thước canvas
             const filterWidth = canvas.width * filterRatio;
@@ -108,8 +108,19 @@ const Camera: React.FC = () => {
   };
 
   const handleCancel = () => {
+    // Dừng stream video hiện tại
+    const video = videoRef.current;
+    if (video && video.srcObject) {
+      const stream = video.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+
+    // Reset trạng thái
     setCapturedImage(null);
     setIsCaptured(false);
+
+    // Khởi động lại camera
     startCamera(facingMode);
   };
 
@@ -140,6 +151,7 @@ const Camera: React.FC = () => {
         ) : (
           <>
             <video
+              key={facingMode + (isCaptured ? 'captured' : 'live')}
               ref={videoRef}
               className="w-full h-full object-cover"
               autoPlay
@@ -150,7 +162,7 @@ const Camera: React.FC = () => {
               <img
                 src={selectedFilter}
                 alt="Filter"
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[70%] md:w-[40%] h-auto object-contain pointer-events-none z-10"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[80%] md:w-[40%] h-auto object-contain pointer-events-none z-10"
               />
             )}
           </>
