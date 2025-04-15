@@ -32,6 +32,15 @@ const Camera: React.FC = () => {
     }
   };
 
+  const stopCamera = () => {
+    const video = videoRef.current;
+    if (video && video.srcObject) {
+      const stream = video.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+  };
+
   useEffect(() => {
     startCamera(facingMode);
   }, [facingMode]);
@@ -42,21 +51,17 @@ const Camera: React.FC = () => {
     if (video && canvas) {
       const context = canvas.getContext("2d");
       if (context) {
-        // Lấy kích thước hiển thị của video
         const displayWidth = video.clientWidth;
         const displayHeight = video.clientHeight;
 
-        // Đặt kích thước canvas bằng kích thước hiển thị
         canvas.width = displayWidth;
         canvas.height = displayHeight;
 
-        // Tính tỷ lệ của video gốc và hiển thị
         const videoRatio = video.videoWidth / video.videoHeight;
         const displayRatio = displayWidth / displayHeight;
 
         let drawWidth, drawHeight, xOffset, yOffset;
 
-        // Áp dụng logic tương tự object-cover
         if (videoRatio > displayRatio) {
           drawHeight = displayHeight;
           drawWidth = drawHeight * videoRatio;
@@ -69,7 +74,6 @@ const Camera: React.FC = () => {
           yOffset = (displayHeight - drawHeight) / 2;
         }
 
-        // Vẽ video lên canvas
         context.drawImage(video, xOffset, yOffset, drawWidth, drawHeight);
 
         if (selectedFilter) {
@@ -77,27 +81,22 @@ const Camera: React.FC = () => {
           filterImg.src = selectedFilter;
 
           filterImg.onload = () => {
-            // Xác định filterRatio dựa trên thiết bị
-            const isMobile = window.innerWidth <= 768; // Mobile nếu chiều rộng <= 768px
-            const filterRatio = isMobile ? 0.8 : 0.4; // 80% trên mobile, 40% trên PC
+            const isMobile = window.innerWidth <= 768;
+            const filterRatio = isMobile ? 0.7 : 0.4;
 
-            // Tính kích thước filter dựa trên kích thước canvas
             const filterWidth = canvas.width * filterRatio;
-            const filterHeight = canvas.width * filterRatio; // Giữ tỷ lệ vuông
+            const filterHeight = canvas.width * filterRatio;
             const x = (canvas.width - filterWidth) / 2;
             const y = (canvas.height - filterHeight) / 2;
 
-            // Vẽ filter lên canvas
             context.drawImage(filterImg, x, y, filterWidth, filterHeight);
 
-            // Xuất ảnh
             const dataUrl = canvas.toDataURL("image/png");
             setCapturedImage(dataUrl);
             setIsCaptured(true);
             new Audio(captureSound).play();
           };
         } else {
-          // Xuất ảnh nếu không có filter
           const dataUrl = canvas.toDataURL("image/png");
           setCapturedImage(dataUrl);
           setIsCaptured(true);
@@ -108,20 +107,14 @@ const Camera: React.FC = () => {
   };
 
   const handleCancel = () => {
-    // Dừng stream video hiện tại
-    const video = videoRef.current;
-    if (video && video.srcObject) {
-      const stream = video.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
-      video.srcObject = null;
-    }
-
-    // Reset trạng thái
+    stopCamera();
     setCapturedImage(null);
     setIsCaptured(false);
-
-    // Khởi động lại camera
-    startCamera(facingMode);
+    setSelectedFilter(null);
+    setShowFilterBox(false);
+    setError(null);
+    setFacingMode("environment");
+    startCamera("environment");
   };
 
   const handleDownload = () => {
@@ -151,7 +144,6 @@ const Camera: React.FC = () => {
         ) : (
           <>
             <video
-              key={facingMode + (isCaptured ? 'captured' : 'live')}
               ref={videoRef}
               className="w-full h-full object-cover"
               autoPlay
@@ -162,7 +154,7 @@ const Camera: React.FC = () => {
               <img
                 src={selectedFilter}
                 alt="Filter"
-                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[80%] md:w-[40%] h-auto object-contain pointer-events-none z-10"
+                className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[70%] md:w-[40%] h-auto object-contain pointer-events-none z-10"
               />
             )}
           </>
