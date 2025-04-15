@@ -107,15 +107,15 @@ const Camera: React.FC = () => {
   };
 
   const handleCancel = () => {
-    stopCamera();
     setCapturedImage(null);
     setIsCaptured(false);
     setSelectedFilter(null);
     setShowFilterBox(false);
     setError(null);
-
-    // GỌI LẠI camera sau khi hủy ảnh
-    startCamera(facingMode);
+    setFacingMode("user");
+    setTimeout(() => {
+      setFacingMode("environment");
+    }, 100);
   };
 
 
